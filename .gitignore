@@ -2,6 +2,7 @@
 *
 
 !.gitignore
+!/README.md
 !/language/
 !/language/**
 !/pkg_wtjoomshoppingfinder.xml
