@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="finder" method="upgrade">
+	<name>PLG_FINDER_WTJOOMSHOPPINGFINDER</name>
+	<author>Sergey Tolkachyov</author>
+	<creationDate>09.06.2026</creationDate>
+	<copyright>Copyright (c) 2024 - 2026 Sergey Tolkachyov. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@web-tolk.ru</authorEmail>
+	<authorUrl>https://web-tolk.ru</authorUrl>
+	<version>1.0.1-dev</version>
+	<description>PLG_FINDER_WTJOOMSHOPPINGFINDER_XML_DESCRIPTION</description>
+	<namespace path="src">Joomla\Plugin\Finder\Wtjoomshoppingfinder</namespace>
+	<files>
+		<folder plugin="wtjoomshoppingfinder">services</folder>
+		<folder>src</folder>
+	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB/plg_finder_wtjoomshoppingfinder.ini</language>
+		<language tag="en-GB">language/en-GB/plg_finder_wtjoomshoppingfinder.sys.ini</language>
+		<language tag="ru-RU">language/ru-RU/plg_finder_wtjoomshoppingfinder.ini</language>
+		<language tag="ru-RU">language/ru-RU/plg_finder_wtjoomshoppingfinder.sys.ini</language>
+	</languages>
+	<config>
+		<fields name="params">
+			<fieldset name="basic" addfieldprefix="Joomla\Component\Finder\Administrator\Field">
+				<field
+					name="plugin_info"
+					type="plugininfo"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER"
+					addfieldprefix="Joomla\Plugin\Finder\Wtjoomshoppingfinder\Fields"
+					/>
+				<field
+					name="live_site_notice"
+					type="livesitenotice"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_LIVE_SITE_NOTICE_LABEL"
+					addfieldprefix="Joomla\Plugin\Finder\Wtjoomshoppingfinder\Fields"
+					/>
+				<field
+					name="index_manufacturer"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_MANUFACTURER_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_MANUFACTURER_DESC"
+					default="1"
+					filter="integer"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_manufacturer_label"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_MANUFACTURER_LABEL_TEXT_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_MANUFACTURER_LABEL_TEXT_DESC"
+					default="1"
+					filter="integer"
+					showon="index_manufacturer:1"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_characteristics"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_CHARACTERISTICS_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_CHARACTERISTICS_DESC"
+					default="1"
+					filter="integer"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_characteristic_names"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_CHARACTERISTIC_NAMES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_CHARACTERISTIC_NAMES_DESC"
+					default="1"
+					filter="integer"
+					showon="index_characteristics:1"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_dependent_attributes"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_DEPENDENT_ATTRIBUTES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_DEPENDENT_ATTRIBUTES_DESC"
+					default="1"
+					filter="integer"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_dependent_attribute_names"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_DEPENDENT_ATTRIBUTE_NAMES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_DEPENDENT_ATTRIBUTE_NAMES_DESC"
+					default="1"
+					filter="integer"
+					showon="index_dependent_attributes:1"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_independent_attributes"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_INDEPENDENT_ATTRIBUTES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_INDEPENDENT_ATTRIBUTES_DESC"
+					default="1"
+					filter="integer"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_independent_attribute_names"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_INDEPENDENT_ATTRIBUTE_NAMES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_INDEPENDENT_ATTRIBUTE_NAMES_DESC"
+					default="1"
+					filter="integer"
+					showon="index_independent_attributes:1"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_free_attributes"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_FREE_ATTRIBUTES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_FREE_ATTRIBUTES_DESC"
+					default="1"
+					filter="integer"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="index_free_attribute_names"
+					type="radio"
+					layout="joomla.form.field.radio.switcher"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_FREE_ATTRIBUTE_NAMES_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEX_FREE_ATTRIBUTE_NAMES_DESC"
+					default="1"
+					filter="integer"
+					showon="index_free_attributes:1"
+					>
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+				<field
+					name="taxonomies"
+					type="taxonomytypes"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_TAXONOMIES_LABEL"
+					default="type,category,language"
+					multiple="true"
+					>
+					<option value="category">PLG_FINDER_WTJOOMSHOPPINGFINDER_TAXONOMIES_CATEGORY</option>
+					<option value="language">PLG_FINDER_WTJOOMSHOPPINGFINDER_TAXONOMIES_LANGUAGE</option>
+					<option value="type">PLG_FINDER_WTJOOMSHOPPINGFINDER_TAXONOMIES_TYPE</option>
+				</field>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

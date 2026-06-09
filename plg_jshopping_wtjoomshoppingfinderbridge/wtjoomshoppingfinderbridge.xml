@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="plugin" group="jshopping" method="upgrade">
+	<name>PLG_JSHOPPING_WTJOOMSHOPPINGFINDERBRIDGE</name>
+	<author>Sergey Tolkachyov</author>
+	<creationDate>09.06.2026</creationDate>
+	<copyright>Copyright (c) 2024 - 2026 Sergey Tolkachyov. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@web-tolk.ru</authorEmail>
+	<authorUrl>https://web-tolk.ru</authorUrl>
+	<version>1.0.1-dev</version>
+	<description>PLG_JSHOPPING_WTJOOMSHOPPINGFINDERBRIDGE_XML_DESCRIPTION</description>
+	<namespace path="src">Joomla\Plugin\Jshopping\Wtjoomshoppingfinderbridge</namespace>
+	<files>
+		<folder plugin="wtjoomshoppingfinderbridge">services</folder>
+		<folder>src</folder>
+	</files>
+	<languages>
+		<language tag="en-GB">language/en-GB/plg_jshopping_wtjoomshoppingfinderbridge.ini</language>
+		<language tag="en-GB">language/en-GB/plg_jshopping_wtjoomshoppingfinderbridge.sys.ini</language>
+		<language tag="ru-RU">language/ru-RU/plg_jshopping_wtjoomshoppingfinderbridge.ini</language>
+		<language tag="ru-RU">language/ru-RU/plg_jshopping_wtjoomshoppingfinderbridge.sys.ini</language>
+	</languages>
+	<config>
+		<fields name="params">
+			<fieldset name="basic">
+				<field
+					name="plugin_info"
+					type="plugininfo"
+					label="PLG_JSHOPPING_WTJOOMSHOPPINGFINDERBRIDGE"
+					addfieldprefix="Joomla\Plugin\Jshopping\Wtjoomshoppingfinderbridge\Fields"
+					/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

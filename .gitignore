@@ -1,0 +1,12 @@
+# Keep the repository limited to package runtime sources.
+*
+
+!.gitignore
+!/language/
+!/language/**
+!/pkg_wtjoomshoppingfinder.xml
+!/script.php
+!/plg_finder_wtjoomshoppingfinder/
+!/plg_finder_wtjoomshoppingfinder/**
+!/plg_jshopping_wtjoomshoppingfinderbridge/
+!/plg_jshopping_wtjoomshoppingfinderbridge/**

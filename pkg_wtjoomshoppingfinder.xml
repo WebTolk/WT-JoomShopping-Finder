@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="package" method="upgrade">
+	<name>PKG_WTJOOMSHOPPINGFINDER</name>
+	<packagename>wtjoomshoppingfinder</packagename>
+	<author>Sergey Tolkachyov</author>
+	<creationDate>09.06.2026</creationDate>
+	<copyright>Copyright (c) 2024 - 2026 Sergey Tolkachyov. All rights reserved.</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<authorEmail>info@web-tolk.ru</authorEmail>
+	<authorUrl>https://web-tolk.ru</authorUrl>
+	<version>1.0.1-dev</version>
+	<description>PKG_WTJOOMSHOPPINGFINDER_DESC</description>
+	<scriptfile>script.php</scriptfile>
+	<files>
+		<folder type="plugin" group="finder" id="wtjoomshoppingfinder">plg_finder_wtjoomshoppingfinder</folder>
+		<folder type="plugin" group="jshopping" id="wtjoomshoppingfinderbridge">plg_jshopping_wtjoomshoppingfinderbridge</folder>
+	</files>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/pkg_wtjoomshoppingfinder.ini</language>
+		<language tag="en-GB">en-GB/pkg_wtjoomshoppingfinder.sys.ini</language>
+		<language tag="ru-RU">ru-RU/pkg_wtjoomshoppingfinder.ini</language>
+		<language tag="ru-RU">ru-RU/pkg_wtjoomshoppingfinder.sys.ini</language>
+	</languages>
+	<updateservers>
+		<server type="extension" priority="1" name="WT JoomShopping Finder updates">https://web-tolk.ru/component/swjprojects/jupdate?element=wtjoomshoppingfinder</server>
+	</updateservers>
+	<changelogurl>https://web-tolk.ru/jchangelog?element=wtjoomshoppingfinder</changelogurl>
+</extension>
