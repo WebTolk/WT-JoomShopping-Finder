@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>info@web-tolk.ru</authorEmail>
 	<authorUrl>https://web-tolk.ru</authorUrl>
-	<version>1.0.1-dev</version>
+	<version>1.1.0-dev</version>
 	<description>PLG_JSHOPPING_WTJOOMSHOPPINGFINDERBRIDGE_XML_DESCRIPTION</description>
 	<namespace path="src">Joomla\Plugin\Jshopping\Wtjoomshoppingfinderbridge</namespace>
 	<files>

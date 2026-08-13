@@ -558,20 +558,20 @@ final class Wtjoomshoppingfinderbridge extends CMSPlugin
 		}
 
 		$field = 'extra_field_' . $fieldId;
-		$columns = $this->getDatabase()->getTableColumns('#__jshopping_products_to_extra_fields');
+		$model = \JSFactory::getModel('productfields');
+		$ids   = [];
 
-		if (!isset($columns[$field])) {
-			return [];
+		foreach ($model->getListProducsValueByExtraFieldId($fieldId) as $row) {
+			$value = trim((string) ($row->$field ?? ''));
+
+			if ($value === '' || $value === '0') {
+				continue;
+			}
+
+			$ids[] = (int) $row->product_id;
 		}
 
-		$db = $this->getDatabase();
-		$query = $db->getQuery(true)
-			->select($db->quoteName('product_id'))
-			->from($db->quoteName('#__jshopping_products_to_extra_fields'))
-			->where($db->quoteName($field) . ' <> ' . $db->quote(''))
-			->where($db->quoteName($field) . ' <> 0');
-
-		return $this->loadIds($query);
+		return array_values(array_unique(array_filter($ids)));
 	}
 
 	/**
@@ -591,19 +591,20 @@ final class Wtjoomshoppingfinderbridge extends CMSPlugin
 		}
 
 		$field = 'extra_field_' . $fieldId;
-		$columns = $this->getDatabase()->getTableColumns('#__jshopping_products_to_extra_fields');
+		$model = \JSFactory::getModel('productfields');
+		$ids   = [];
 
-		if (!isset($columns[$field])) {
-			return [];
+		foreach ($model->getListProducsValueByExtraFieldId($fieldId) as $row) {
+			$values = array_map('intval', array_filter(explode(',', (string) ($row->$field ?? ''))));
+
+			if (!in_array($valueId, $values, true)) {
+				continue;
+			}
+
+			$ids[] = (int) $row->product_id;
 		}
 
-		$db = $this->getDatabase();
-		$query = $db->getQuery(true)
-			->select($db->quoteName('product_id'))
-			->from($db->quoteName('#__jshopping_products_to_extra_fields'))
-			->where('FIND_IN_SET(' . $db->quote((string) $valueId) . ', ' . $db->quoteName($field) . ')');
-
-		return $this->loadIds($query);
+		return array_values(array_unique(array_filter($ids)));
 	}
 
 	/**

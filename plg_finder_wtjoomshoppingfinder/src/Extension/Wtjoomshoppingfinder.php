@@ -44,6 +44,38 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 	use DatabaseAwareTrait;
 
 	/**
+	 * Value that enables all product-owned fields.
+	 *
+	 * @var    string
+	 * @since  1.0.1
+	 */
+	private const PRODUCT_FIELD_ALL = 'all';
+
+	/**
+	 * Product-owned fields configurable for Smart Search indexing.
+	 *
+	 * @var    array<int, string>
+	 * @since  1.0.1
+	 */
+	private const INDEXED_PRODUCT_FIELDS = [
+		'title',
+		'short_description',
+		'description',
+		'meta_title',
+		'meta_keyword',
+		'meta_description',
+		'product_ean',
+		'manufacturer_code',
+		'real_ean',
+		'product_url',
+		'product_price',
+		'product_old_price',
+		'product_buy_price',
+		'min_price',
+		'product_weight',
+	];
+
+	/**
 	 * Whether Joomla should automatically load plugin language files.
 	 *
 	 * @var    bool
@@ -653,12 +685,13 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 		$tag      = $language ?: $this->getDefaultLanguageTag();
 		$name     = $this->resolveLanguageField('#__jshopping_products', 'name', $tag);
 		$alias    = $this->resolveLanguageField('#__jshopping_products', 'alias', $tag);
-		$desc     = $this->resolveLanguageField('#__jshopping_products', 'description', $tag);
-		$short    = $this->resolveLanguageField('#__jshopping_products', 'short_description', $tag);
-		$metaKey  = $this->resolveLanguageField('#__jshopping_products', 'meta_keyword', $tag);
-		$metaDesc = $this->resolveLanguageField('#__jshopping_products', 'meta_description', $tag);
-		$catName  = $this->resolveLanguageField('#__jshopping_categories', 'name', $tag);
-		$manName  = $this->resolveLanguageField('#__jshopping_manufacturers', 'name', $tag);
+		$desc      = $this->resolveLanguageField('#__jshopping_products', 'description', $tag);
+		$short     = $this->resolveLanguageField('#__jshopping_products', 'short_description', $tag);
+		$metaTitle = $this->resolveLanguageField('#__jshopping_products', 'meta_title', $tag);
+		$metaKey   = $this->resolveLanguageField('#__jshopping_products', 'meta_keyword', $tag);
+		$metaDesc  = $this->resolveLanguageField('#__jshopping_products', 'meta_description', $tag);
+		$catName   = $this->resolveLanguageField('#__jshopping_categories', 'name', $tag);
+		$manName   = $this->resolveLanguageField('#__jshopping_manufacturers', 'name', $tag);
 
 		$query = ($query instanceof DatabaseQuery) ? $query : $db->getQuery(true);
 		$query->select(
@@ -669,12 +702,15 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 				$db->quoteName('prod.' . $alias, 'alias'),
 				$db->quoteName('prod.' . $desc, 'body'),
 				$db->quoteName('prod.' . $short, 'summary'),
+				$db->quoteName('prod.' . $metaTitle, 'meta_title'),
 				$db->quoteName('prod.' . $metaKey, 'metakey'),
 				$db->quoteName('prod.' . $metaDesc, 'metadesc'),
 				$db->quoteName('prod.product_date_added', 'created'),
 				$db->quoteName('prod.product_publish', 'state'),
 				$db->quoteName('prod.access', 'access'),
 				$db->quoteName('prod.product_ean'),
+				$db->quoteName('prod.real_ean'),
+				$db->quoteName('prod.product_url'),
 				$db->quoteName('man.' . $manName, 'manufacturer'),
 				$db->quoteName('prod.manufacturer_code'),
 				$db->quoteName('prod.product_old_price'),
@@ -749,12 +785,17 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 		$item->params  = $this->buildItemParams($item);
 		$item->metadata = new Registry($item->metadata ?? '');
 
+		$this->applyProductFieldInstructions($item);
+
 		$extraContent  = $this->getProductCharacteristicsContent((int) $item->id, (string) $item->language);
 		$extraContent .= ' ' . $this->getProductAttributesContent((int) $item->id, (string) $item->language);
-		$extraContent .= ' ' . $this->getProductPriceContent($item);
+		$extraContent .= ' ' . $this->getIndexedProductFieldsContent($item);
 
-		$item->summary = FinderHelper::prepareContent((string) $item->summary, $item->params, $item);
-		$item->body    = FinderHelper::prepareContent(trim((string) $item->body . ' ' . $extraContent), $item->params, $item);
+		$productSummary = $this->isProductFieldIndexed('short_description') ? (string) $item->summary : '';
+		$productBody    = $this->isProductFieldIndexed('description') ? (string) $item->body : '';
+
+		$item->summary = FinderHelper::prepareContent($productSummary, $item->params, $item);
+		$item->body    = FinderHelper::prepareContent(trim($productBody . ' ' . $extraContent), $item->params, $item);
 		$item->access  = max((int) ($item->access ?? 1), (int) ($item->cat_access ?? 1));
 		$item->url     = $this->getUrl((int) $item->id, $this->extension, $this->layout, (string) $item->language);
 		$item->route   = $this->getProductRoute(
@@ -770,9 +811,6 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 			$item->imageUrl = rtrim((string) $this->jshopConfig->image_product_live_path, '/') . '/' . $item->image;
 			$item->imageAlt = $item->title;
 		}
-
-		$item->addInstruction(Indexer::META_CONTEXT, 'metakey');
-		$item->addInstruction(Indexer::META_CONTEXT, 'metadesc');
 
 		$taxonomies = $this->getConfiguredTaxonomies();
 
@@ -793,6 +831,102 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 
 		FinderHelper::getContentExtras($item);
 		$this->indexer->index($item);
+	}
+
+	/**
+	 * Applies Finder tokenization instructions for selected product-owned fields.
+	 *
+	 * @param   Result  $item  Finder product item.
+	 *
+	 * @return void
+	 *
+	 * @since  1.0.1
+	 */
+	private function applyProductFieldInstructions(Result $item): void
+	{
+		$item->removeInstruction(Indexer::TITLE_CONTEXT, 'id');
+		$item->removeInstruction(Indexer::TITLE_CONTEXT, 'subtitle');
+		$item->removeInstruction(Indexer::META_CONTEXT, 'meta');
+		$item->removeInstruction(Indexer::META_CONTEXT, 'list_price');
+		$item->removeInstruction(Indexer::META_CONTEXT, 'sale_price');
+		$item->removeInstruction(Indexer::PATH_CONTEXT, 'path');
+		$item->removeInstruction(Indexer::PATH_CONTEXT, 'alias');
+		$item->removeInstruction(Indexer::MISC_CONTEXT, 'comments');
+
+		if (!$this->isProductFieldIndexed('title')) {
+			$item->removeInstruction(Indexer::TITLE_CONTEXT, 'title');
+		}
+
+		if (!$this->isProductFieldIndexed('short_description')) {
+			$item->removeInstruction(Indexer::TEXT_CONTEXT, 'summary');
+		}
+
+		if ($this->isProductFieldIndexed('meta_title')) {
+			$item->addInstruction(Indexer::META_CONTEXT, 'meta_title');
+		}
+
+		if ($this->isProductFieldIndexed('meta_keyword')) {
+			$item->addInstruction(Indexer::META_CONTEXT, 'metakey');
+		}
+
+		if ($this->isProductFieldIndexed('meta_description')) {
+			$item->addInstruction(Indexer::META_CONTEXT, 'metadesc');
+		}
+	}
+
+	/**
+	 * Checks whether a product-owned field should be indexed.
+	 *
+	 * @param   string  $field  Product field key.
+	 *
+	 * @return bool
+	 *
+	 * @since  1.0.1
+	 */
+	private function isProductFieldIndexed(string $field): bool
+	{
+		$fields = $this->getIndexedProductFields();
+
+		return in_array(self::PRODUCT_FIELD_ALL, $fields, true) || in_array($field, $fields, true);
+	}
+
+	/**
+	 * Returns normalized selected product-owned fields from plugin parameters.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @since  1.0.1
+	 */
+	private function getIndexedProductFields(): array
+	{
+		$fields = $this->params->get('indexed_product_fields', [self::PRODUCT_FIELD_ALL]);
+
+		if ($fields instanceof Registry) {
+			$fields = $fields->toArray();
+		}
+
+		if (is_string($fields)) {
+			$fields = explode(',', $fields);
+		}
+
+		if (!is_array($fields)) {
+			$fields = [self::PRODUCT_FIELD_ALL];
+		}
+
+		$allowed = array_merge([self::PRODUCT_FIELD_ALL], self::INDEXED_PRODUCT_FIELDS);
+		$fields  = array_values(
+			array_unique(
+				array_intersect(
+					array_map(
+						static fn($field): string => trim((string) $field),
+						$fields
+					),
+					$allowed
+				)
+			)
+		);
+
+		return $fields !== [] ? $fields : [self::PRODUCT_FIELD_ALL];
 	}
 
 	/**
@@ -1240,6 +1374,7 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 	private function getProductAttributesContent(int $productId, string $language): string
 	{
 		$this->loadJshopConfig();
+		$this->setJoomShoppingLanguage($language);
 
 		$indexDependent   = (int) $this->params->get('index_dependent_attributes', 1) === 1;
 		$indexIndependent = (int) $this->params->get('index_independent_attributes', 1) === 1;
@@ -1255,12 +1390,17 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 			return $indexFree ? $this->getProductFreeAttributesContent($productId, $language) : '';
 		}
 
-		$db       = $this->db;
-		$name      = $this->resolveLanguageField('#__jshopping_attr', 'name', $language);
-		$valueName = $this->resolveLanguageField('#__jshopping_attr_values', 'name', $language);
-		$attrRows  = $this->getPublishedAttributes($name);
-		$columns  = $db->getTableColumns('#__jshopping_products_attr');
-		$content  = [];
+		$product = \JSFactory::getTable('product');
+
+		if (!$product->load($productId)) {
+			return '';
+		}
+
+		$attrRows                = $this->getPublishedAttributes();
+		$publishedAttributeValues = $this->getPublishedAttributeValues();
+		$dependentAttributes     = $product->getAttributes();
+		$independentAttributes   = $product->getAttributes2();
+		$content                 = [];
 
 		foreach ($attrRows as $attribute) {
 			$isIndependent = (int) $attribute->independent === 1;
@@ -1274,8 +1414,8 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 			}
 
 			$values = $isIndependent
-				? $this->getIndependentAttributeValues($productId, (int) $attribute->attr_id, $valueName)
-				: $this->getDependentAttributeValues($productId, (int) $attribute->attr_id, $valueName, $columns);
+				? $this->getIndependentAttributeValues((int) $attribute->attr_id, $publishedAttributeValues, $independentAttributes)
+				: $this->getDependentAttributeValues((int) $attribute->attr_id, $publishedAttributeValues, $dependentAttributes);
 
 			if (!$values) {
 				continue;
@@ -1295,101 +1435,121 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 	/**
 	 * Loads published JoomShopping attributes.
 	 *
-	 * @param   string  $name  Localized attribute name column.
-	 *
 	 * @return array<int, object>
 	 *
 	 * @since  1.0.0
 	 */
-	private function getPublishedAttributes(string $name): array
+	private function getPublishedAttributes(): array
 	{
-		$db = $this->db;
-		$query = $db->getQuery(true)
-			->select(
-				[
-					$db->quoteName('attr_id'),
-					$db->quoteName($name, 'name'),
-					$db->quoteName('independent'),
-				]
-			)
-			->from($db->quoteName('#__jshopping_attr'))
-			->where($db->quoteName('publish') . ' = 1')
-			->order($db->quoteName('attr_ordering'));
+		$this->bootJoomShopping();
 
-		$db->setQuery($query);
+		return \JSFactory::getTable('attribut')->getAllAttributes(1, ['publish' => 1]);
+	}
 
-		return $db->loadObjectList();
+	/**
+	 * Loads published JoomShopping attribute values grouped by attribute id.
+	 *
+	 * @return array<int, array<int, string>>
+	 *
+	 * @since  1.0.0
+	 */
+	private function getPublishedAttributeValues(): array
+	{
+		$this->bootJoomShopping();
+
+		$attributeValueTable = \JSFactory::getTable('attributvalue');
+		$values              = [];
+
+		foreach ($attributeValueTable->getAllAttributeValues(0, ['publish' => 1]) as $value) {
+			$attributeId = (int) ($value->attr_id ?? 0);
+			$valueId     = (int) ($value->value_id ?? 0);
+			$name        = trim(strip_tags((string) ($value->name ?? '')));
+
+			if ($attributeId <= 0 || $valueId <= 0 || $name === '') {
+				continue;
+			}
+
+			$values[$attributeId][$valueId] = $name;
+		}
+
+		return $values;
 	}
 
 	/**
 	 * Loads selected dependent attribute values for one product.
 	 *
-	 * @param   int                   $productId    Product id.
-	 * @param   int                   $attributeId  Attribute id.
-	 * @param   string                $name         Localized value name column.
-	 * @param   array<string, mixed>  $columns      Product attribute table columns.
+	 * @param   int                         $attributeId       Attribute id.
+	 * @param   array<int, array<int, string>>  $publishedValues  Published attribute values grouped by attribute id.
+	 * @param   array<int, object>          $productAttributes Product dependent attribute rows.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @since  1.0.0
 	 */
-	private function getDependentAttributeValues(int $productId, int $attributeId, string $name, array $columns): array
+	private function getDependentAttributeValues(int $attributeId, array $publishedValues, array $productAttributes): array
 	{
-		$field = 'attr_' . $attributeId;
+		$field       = 'attr_' . $attributeId;
+		$selectedIds = [];
 
-		if (!isset($columns[$field])) {
+		foreach ($productAttributes as $attributeRow) {
+			if (!isset($attributeRow->$field) || (int) $attributeRow->$field <= 0) {
+				continue;
+			}
+
+			$selectedIds[(int) $attributeRow->$field] = true;
+		}
+
+		if (!$selectedIds || empty($publishedValues[$attributeId])) {
 			return [];
 		}
 
-		$db = $this->db;
-		$query = $db->getQuery(true)
-			->select('DISTINCT ' . $db->quoteName('value.' . $name, 'value_name'))
-			->from($db->quoteName('#__jshopping_products_attr', 'product_attr'))
-			->join(
-				'INNER',
-				$db->quoteName('#__jshopping_attr_values', 'value')
-				. ' ON ' . $db->quoteName('value.value_id') . ' = ' . $db->quoteName('product_attr.' . $field)
-			)
-			->where($db->quoteName('product_attr.product_id') . ' = ' . $productId)
-			->where($db->quoteName('product_attr.' . $field) . ' > 0')
-			->where($db->quoteName('value.publish') . ' = 1')
-			->order($db->quoteName('value.value_ordering'));
+		$values = [];
 
-		$db->setQuery($query);
+		foreach ($publishedValues[$attributeId] as $valueId => $valueName) {
+			if (isset($selectedIds[(int) $valueId])) {
+				$values[] = $valueName;
+			}
+		}
 
-		return array_filter(array_map('strval', $db->loadColumn()));
+		return $values;
 	}
 
 	/**
 	 * Loads selected independent attribute values for one product.
 	 *
-	 * @param   int     $productId    Product id.
-	 * @param   int     $attributeId  Attribute id.
-	 * @param   string  $name         Localized value name column.
+	 * @param   int                         $attributeId       Attribute id.
+	 * @param   array<int, array<int, string>>  $publishedValues  Published attribute values grouped by attribute id.
+	 * @param   array<int, object>          $productAttributes Product independent attribute rows.
 	 *
 	 * @return array<int, string>
 	 *
 	 * @since  1.0.0
 	 */
-	private function getIndependentAttributeValues(int $productId, int $attributeId, string $name): array
+	private function getIndependentAttributeValues(int $attributeId, array $publishedValues, array $productAttributes): array
 	{
-		$db = $this->db;
-		$query = $db->getQuery(true)
-			->select('DISTINCT ' . $db->quoteName('value.' . $name, 'value_name'))
-			->from($db->quoteName('#__jshopping_products_attr2', 'product_attr'))
-			->join(
-				'INNER',
-				$db->quoteName('#__jshopping_attr_values', 'value')
-				. ' ON ' . $db->quoteName('value.value_id') . ' = ' . $db->quoteName('product_attr.attr_value_id')
-			)
-			->where($db->quoteName('product_attr.product_id') . ' = ' . $productId)
-			->where($db->quoteName('product_attr.attr_id') . ' = ' . $attributeId)
-			->where($db->quoteName('value.publish') . ' = 1')
-			->order($db->quoteName('value.value_ordering'));
+		$selectedIds = [];
 
-		$db->setQuery($query);
+		foreach ($productAttributes as $attributeRow) {
+			if ((int) ($attributeRow->attr_id ?? 0) !== $attributeId || (int) ($attributeRow->attr_value_id ?? 0) <= 0) {
+				continue;
+			}
 
-		return array_filter(array_map('strval', $db->loadColumn()));
+			$selectedIds[(int) $attributeRow->attr_value_id] = true;
+		}
+
+		if (!$selectedIds || empty($publishedValues[$attributeId])) {
+			return [];
+		}
+
+		$values = [];
+
+		foreach ($publishedValues[$attributeId] as $valueId => $valueName) {
+			if (isset($selectedIds[(int) $valueId])) {
+				$values[] = $valueName;
+			}
+		}
+
+		return $values;
 	}
 
 	/**
@@ -1418,68 +1578,82 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 			return '';
 		}
 
-		$db   = $this->db;
-		$name = $this->resolveLanguageField('#__jshopping_free_attr', 'name', $language);
+		$this->setJoomShoppingLanguage($language);
 
-		$query = $db->getQuery(true)
-			->select(
-				[
-					$db->quoteName('free_attr.' . $name, 'name'),
-				]
-			)
-			->from($db->quoteName('#__jshopping_products_free_attr', 'product_free_attr'))
-			->join(
-				'INNER',
-				$db->quoteName('#__jshopping_free_attr', 'free_attr')
-				. ' ON ' . $db->quoteName('free_attr.id') . ' = ' . $db->quoteName('product_free_attr.attr_id')
-			)
-			->where($db->quoteName('product_free_attr.product_id') . ' = ' . $productId)
-			->where($db->quoteName('free_attr.publish') . ' = 1')
-			->order($db->quoteName('free_attr.ordering'));
+		$product = \JSFactory::getTable('product');
 
-		$db->setQuery($query);
+		if (!$product->load($productId)) {
+			return '';
+		}
 
-		return $this->formatNameValueRows($db->loadAssocList());
+		return $this->formatNameValueRows($product->getListFreeAttributes());
 	}
 
 	/**
-	 * Builds searchable manufacturer, code, EAN, and price text.
+	 * Builds searchable text for selected product-owned scalar fields.
 	 *
 	 * @param   Result  $item  Finder product item.
 	 *
 	 * @return string
 	 *
-	 * @since  1.0.0
+	 * @since  1.0.1
 	 */
-	private function getProductPriceContent(Result $item): string
+	private function getIndexedProductFieldsContent(Result $item): string
 	{
 		$this->bootJoomShopping();
 		$parts = [];
-		$indexManufacturer      = (int) $this->params->get('index_manufacturer', 1) === 1;
 		$indexManufacturerLabel = (int) $this->params->get('index_manufacturer_label', 1) === 1;
-		$map = [
-			'manufacturer'      => 'JSHOP_MANUFACTURER',
+		$textFields = [
+			'product_ean'       => 'JSHOP_EAN_PRODUCT',
 			'manufacturer_code' => 'JSHOP_MANUFACTURER_CODE',
-			'product_ean'       => 'JSHOP_EAN',
+			'real_ean'          => 'JSHOP_EAN',
+			'product_url'       => 'PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_URL',
 		];
 
-		foreach ($map as $field => $label) {
-			if ($field === 'manufacturer' && !$indexManufacturer) {
+		foreach ($textFields as $field => $label) {
+			if (!$this->isProductFieldIndexed($field)) {
 				continue;
 			}
 
 			$value = trim((string) $item->getElement($field));
 
 			if ($value !== '') {
-				$parts[] = $field === 'manufacturer' && !$indexManufacturerLabel ? $value : Text::_($label) . ': ' . $value;
+				$parts[] = Text::_($label) . ': ' . $value;
 			}
 		}
 
-		foreach (['product_old_price', 'product_buy_price', 'product_price'] as $field) {
+		if ((int) $this->params->get('index_manufacturer', 1) === 1) {
+			$value = trim((string) $item->getElement('manufacturer'));
+
+			if ($value !== '') {
+				$parts[] = $indexManufacturerLabel ? Text::_('JSHOP_MANUFACTURER') . ': ' . $value : $value;
+			}
+		}
+
+		$priceFields = [
+			'product_price'     => 'JSHOP_PRICE',
+			'product_old_price' => 'JSHOP_OLD_PRICE',
+			'product_buy_price' => 'PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_BUY_PRICE',
+			'min_price'         => 'PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_MIN_PRICE',
+		];
+
+		foreach ($priceFields as $field => $label) {
+			if (!$this->isProductFieldIndexed($field)) {
+				continue;
+			}
+
 			$value = (float) $item->getElement($field);
 
 			if ($value > 0) {
-				$parts[] = \Joomla\Component\Jshopping\Site\Helper\Helper::formatPrice($value);
+				$parts[] = Text::_($label) . ': ' . \Joomla\Component\Jshopping\Site\Helper\Helper::formatPrice($value);
+			}
+		}
+
+		if ($this->isProductFieldIndexed('product_weight')) {
+			$value = (float) $item->getElement('product_weight');
+
+			if ($value > 0) {
+				$parts[] = Text::_('JSHOP_WEIGHT') . ': ' . \Joomla\Component\Jshopping\Site\Helper\Helper::formatWeight($value);
 			}
 		}
 

@@ -7,7 +7,7 @@
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
 	<authorEmail>info@web-tolk.ru</authorEmail>
 	<authorUrl>https://web-tolk.ru</authorUrl>
-	<version>1.0.1-dev</version>
+	<version>1.1.0-dev</version>
 	<description>PLG_FINDER_WTJOOMSHOPPINGFINDER_XML_DESCRIPTION</description>
 	<namespace path="src">Joomla\Plugin\Finder\Wtjoomshoppingfinder</namespace>
 	<files>
@@ -35,6 +35,31 @@
 					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_LIVE_SITE_NOTICE_LABEL"
 					addfieldprefix="Joomla\Plugin\Finder\Wtjoomshoppingfinder\Fields"
 					/>
+				<field
+					name="indexed_product_fields"
+					type="list"
+					layout="joomla.form.field.list-fancy-select"
+					label="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEXED_PRODUCT_FIELDS_LABEL"
+					description="PLG_FINDER_WTJOOMSHOPPINGFINDER_FIELD_INDEXED_PRODUCT_FIELDS_DESC"
+					multiple="true"
+					>
+					<option value="all">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_ALL</option>
+					<option value="title">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_TITLE</option>
+					<option value="short_description">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_SHORT_DESCRIPTION</option>
+					<option value="description">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_DESCRIPTION</option>
+					<option value="meta_title">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_META_TITLE</option>
+					<option value="meta_keyword">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_META_KEYWORD</option>
+					<option value="meta_description">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_META_DESCRIPTION</option>
+					<option value="product_ean">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_EAN</option>
+					<option value="manufacturer_code">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_MANUFACTURER_CODE</option>
+					<option value="real_ean">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_REAL_EAN</option>
+					<option value="product_url">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_URL</option>
+					<option value="product_price">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_PRICE</option>
+					<option value="product_old_price">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_OLD_PRICE</option>
+					<option value="product_buy_price">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_BUY_PRICE</option>
+					<option value="min_price">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_MIN_PRICE</option>
+					<option value="product_weight">PLG_FINDER_WTJOOMSHOPPINGFINDER_PRODUCT_FIELD_PRODUCT_WEIGHT</option>
+				</field>
 				<field
 					name="index_manufacturer"
 					type="radio"
