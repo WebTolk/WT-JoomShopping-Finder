@@ -21,6 +21,7 @@ use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
+use Joomla\CMS\Uri\Uri;
 use Joomla\Component\Finder\Administrator\Indexer\Adapter;
 use Joomla\Component\Finder\Administrator\Indexer\Helper as FinderHelper;
 use Joomla\Component\Finder\Administrator\Indexer\Indexer;
@@ -198,6 +199,81 @@ final class Wtjoomshoppingfinder extends Adapter implements SubscriberInterface
 			],
 			parent::getSubscribedEvents()
 		);
+	}
+
+	/**
+	 * Removes indexed links whose JoomShopping product no longer exists.
+	 *
+	 * @return int Number of removed Finder links, including language variants.
+	 * @throws \Exception
+	 *
+	 * @since  1.1.1
+	 */
+	public function onFinderGarbageCollection(): int
+	{
+		$typeId = (int) $this->getTypeId();
+
+		if ($typeId === 0) {
+			return 0;
+		}
+
+		$db        = $this->db;
+		$lastId    = 0;
+		$removed   = 0;
+		$batchSize = 500;
+		$urlPrefix = $db->quote($db->escape('index.php?option=com_jshopping&', true) . '%', false);
+
+		// Use link ids as a cursor because removing links changes subsequent offsets.
+		do {
+			$query = $db->getQuery(true)
+				->select($db->quoteName(['link_id', 'url']))
+				->from($db->quoteName('#__finder_links'))
+				->where($db->quoteName('type_id') . ' = ' . $typeId)
+				->where($db->quoteName('link_id') . ' > ' . $lastId)
+				->where($db->quoteName('url') . ' LIKE ' . $urlPrefix)
+				->order($db->quoteName('link_id') . ' ASC');
+			$db->setQuery($query, 0, $batchSize);
+			$links = $db->loadObjectList();
+			$productIds = [];
+
+			foreach ($links as $link) {
+				$lastId = (int) $link->link_id;
+				$uri = new Uri($link->url);
+
+				if ($uri->getVar('option') !== 'com_jshopping'
+					|| $uri->getVar('controller') !== 'product'
+					|| $uri->getVar('task') !== 'view') {
+					continue;
+				}
+
+				$productId = filter_var($uri->getVar('product_id'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+				if ($productId !== false) {
+					$productIds[(int) $link->link_id] = $productId;
+				}
+			}
+
+			if ($productIds === []) {
+				continue;
+			}
+
+			// Test existence only: unpublished products and old language URLs are not garbage.
+			$query = $db->getQuery(true)
+				->select($db->quoteName('product_id'))
+				->from($db->quoteName($this->table))
+				->whereIn($db->quoteName('product_id'), array_values(array_unique($productIds)));
+			$db->setQuery($query);
+			$existing = array_fill_keys($db->loadColumn(), true);
+
+			foreach ($productIds as $linkId => $productId) {
+				if (!isset($existing[$productId])) {
+					$this->indexer->remove($linkId, false);
+					$removed++;
+				}
+			}
+		} while (count($links) === $batchSize);
+
+		return $removed;
 	}
 
 	/**
