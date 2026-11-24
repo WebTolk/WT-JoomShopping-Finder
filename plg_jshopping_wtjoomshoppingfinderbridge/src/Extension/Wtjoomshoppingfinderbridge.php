@@ -161,13 +161,13 @@ final class Wtjoomshoppingfinderbridge extends CMSPlugin
 	 * Reindexes products after characteristic fields are removed.
 	 *
 	 * @param   array<int, int|string>  $cid     Field ids.
-	 * @param   bool                    $result  Removal result.
+	 * @param   array<int, bool>|bool  $result  Removal results keyed by field id, or a legacy boolean.
 	 *
 	 * @return void
 	 *
 	 * @since  1.0.0
 	 */
-	public function onAfterRemoveProductField(array $cid, bool $result = true): void
+	public function onAfterRemoveProductField(array $cid, array|bool $result = true): void
 	{
 		$this->dispatchProductReindex($this->getAllProductIds());
 	}
